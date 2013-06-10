@@ -12,15 +12,15 @@
 
 (function ($) {
     var lightbox = {
+        overlay: $("#overlay"),
+
         /*
         # Initialize the lightbox by creating our html and reading some image data
         # This method is called by the constructor after any click events trigger it
         # You will never call it by itself, to my knowledge.
         */
-        initialize: function (options) {
-            var opts = options;
-
-            this.opts = options;
+        initialize: function (opts) {
+            this.opts = opts;
 
             $('#overlay, #lightbox').remove();
             opts.inprogress = false;
@@ -89,7 +89,7 @@
 
             // Resize and display the sexy, sexy overlay.
             this.resizeOverlayToFitWindow();
-            $("#overlay").hide().css({ opacity: opts.overlayOpacity }).fadeIn();
+            this.overlay.hide().css({ opacity: opts.overlayOpacity }).fadeIn();
             imageNum = 0;
 
             // if data is not provided by jsonData parameter
@@ -167,8 +167,8 @@
                 var newHeight = imgPreloader.height;
 
                 if (opts.scaleImages) {
-                    newWidth = parseInt(opts.xScale * newWidth, 10);
-                    newHeight = parseInt(opts.yScale * newHeight, 10);
+                    newWidth = parseInt(opts.scaleX * newWidth, 10);
+                    newHeight = parseInt(opts.scaleY * newHeight, 10);
                 }
 
                 if (opts.fitToScreen) {
@@ -204,7 +204,7 @@
         end: function () {
             this.disableKeyboardNav();
             $('#lightbox').hide();
-            $('#overlay').fadeOut();
+            this.overlay.fadeOut();
             $('select, object, embed').show();
         },
         preloadNeighborImages: function () {
@@ -323,8 +323,7 @@
         resizeOverlayToFitWindow: function () {
             var $doc = $(document);
 
-            $('#overlay').css({ width: $doc.width(), height: $doc.height() });
-            //  ^^^^^^^ <- sexy!
+            this.overlay.css({ width: $doc.width(), height: $doc.height() });
         },
         updateNav: function () {
             var opts = this.opts;
@@ -415,7 +414,7 @@
         if ((key == 'x') || (key == 'o') || (key == 'c') || (keycode == escapeKey)) {
             lightbox.end();
             return;
-
+        }
             // display previous image
             lightbox.disableKeyboardNav();
 
@@ -445,11 +444,12 @@
 
         $(window).resize(lightbox.resizeOverlayToFitWindow);
 
-        return $(this).on(opts.triggerEvent, function () {
+        return $(this).on(opts.triggerEvent, function (e) {
+            e.preventDefault();
+
             // initialize the lightbox
             lightbox.initialize(opts);
             lightbox.showLightbox(this);
-            return false;
         });
     };
 
@@ -457,7 +457,7 @@
         var imageArray = [];
 
         $.each(data, function () {
-            imageArray.push(new Array(this.url, this.title));
+            imageArray.push([this.url, this.title]);
         });
 
         return imageArray;
@@ -470,7 +470,7 @@
         fileBottomNavCloseImage: 'images/closelabel.gif',
         overlayOpacity: 0.6,
         borderSize: 10,
-        imageArray: new Array,
+        imageArray: [],
         activeImage: null,
         imageScroll: false,
         inprogress: false,
@@ -478,8 +478,8 @@
         widthCurrent: 250,
         heightCurrent: 250,
         scaleImages: false,
-        xScale: 1,
-        yScale: 1,
+        scaleX: 1,
+        scaleY: 1,
         displayTitle: true,
         navbarOnTop: false,
         displayDownloadLink: false,
